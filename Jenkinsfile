@@ -8,7 +8,7 @@ node('docker') {
     archive 'target/*.jar'
   }
   stage('Static Code Analysis'){
-    sh 'mvn clean verify sonar:sonar -Dsonar.host.url=http://35.201.247.26:9000 -Dsonar.login=b670c0b8ff673b71caf3218d3fc07a11573d69f5 -Dsonar.projectName=example-project -Dsonar.projectKey=example-project -Dsonar.projectVersion=$BUILD_NUMBER';
+    sh 'mvn clean verify sonar:sonar -Dsonar.host.url=http://192.168.20.88:9000 -Dsonar.login=b670c0b8ff673b71caf3218d3fc07a11573d69f5 -Dsonar.projectName=example-project -Dsonar.projectKey=example-project -Dsonar.projectVersion=$BUILD_NUMBER';
   }
   stage ('Integration Test'){
     sh 'mvn clean verify -Dsurefire.skip=true';
@@ -48,7 +48,7 @@ node('docker_pt') {
     stage ('Promote build in Artifactory'){
     withCredentials([usernameColonPassword(credentialsId:
       'artifactory-account', variable: 'credentials')]) {
-        sh 'curl -u${credentials} -X PUT "http://223.112.95.110:8081/artifactory/api/storage/example-project/${BUILD_NUMBER}/hello-0.0.1.war?properties=Performance-Tested=Yes"';
+        sh 'curl -u${credentials} -X PUT "http://192.168.20.86:8081/artifactory/api/storage/example-project/${BUILD_NUMBER}/hello-0.0.1.war?properties=Performance-Tested=Yes"';
       }
 }
 
