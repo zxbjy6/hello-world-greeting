@@ -16,22 +16,19 @@ node('docker') {
     archive 'target/*.jar'
   }
   stage ('Publish'){
-    def server = Artifactory.server
-      'Default Artifactory Server'
+    def server = Artifactory.server 'Default Artifactory Server'
     def uploadSpec = """{
       "files": [
         {
-           "pattern": "target/hello-0.0.1.war",
-           "target": "example-project/${BUILD_NUMBER}/",
-           "props": "Integration-Tested=Yes;
-             Performance-Tested=No"
+          "pattern": "target/hello-0.0.1.war",
+          "target": "example-project/${BUILD_NUMBER}/",
+          "props": "Integration-Tested=Yes;Performance-Tested=No"
         }
       ]
     }"""
     server.upload(uploadSpec)
   }
-  stash includes:
-   'target/hello-0.0.1.war,src/pt/Hello_World_Test_Plan.jmx',
+  stash includes: 'target/hello-0.0.1.war,src/pt/Hello_World_Test_Plan.jmx',
   name: 'binary'
 }
 node('docker_pt') {
@@ -45,29 +42,13 @@ node('docker_pt') {
   }
   stage ('Performance Testing'){
     sh '''cd /opt/jmeter/bin/
-    ./jmeter.sh -n -t $WORKSPACE/src/pt/Hello_World_Test_Plan.jmx
-    -l $WORKSPACE/test_report.jtl''';
+    ./jmeter.sh -n -t $WORKSPACE/src/pt/Hello_World_Test_Plan.jmx -l $WORKSPACE/test_report.jtl''';
     step([$class: 'ArtifactArchiver', artifacts: '**/*.jtl'])
   }
   stage ('Promote build in Artifactory'){
     withCredentials([usernameColonPassword(credentialsId:
-     'artifactory-account', variable: 'credentials')]) {
-      sh 'curl -u${credentials} -X PUT "http://192.168.20.86:8081/artifactory/api/storage/example-project/${BUILD_NUMBER}/hello-0.0.1.war?properties=Performance-Tested=Yes"';
+      'artifactory-account', variable: 'credentials')]) {
+        sh 'curl -u${credentials} -X PUT "http://192.168.20.86:8081/artifactory/api/storage/example-project/${BUILD_NUMBER}/hello-0.0.1.war?properties=Performance-Tested=Yes"';
+      }
     }
   }
-}
-node ('production') {
-  stage ('Deploy to Prod'){
-    def server = Artifactory.server 'Default Artifactory Server'
-	def downloadSpec = """{
-	  "files": [
-	    {
-		  "pattern": "example-project/$BUILD_NUMBER/*.zip",
-		  "target": "/home/jenkins/tomcat/webapps/"
-		  "props": "Performance-Tested=Yes;Integration-Tested=Yes",
-		}
-	  ]
-	}"""
-	server.download(downloadSpec)
-  }
- }
