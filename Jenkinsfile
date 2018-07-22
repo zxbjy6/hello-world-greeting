@@ -60,4 +60,5 @@ node ('production') {
     stage ('Start Tomcat'){
     sh '''cd /opt/tomcat/bin
     ./startup.sh''';
+    }
 }
