@@ -65,5 +65,5 @@ node('docker_pt') {
     }""
     server.download(downloadSpec)
   }
-}
+ }
 }
