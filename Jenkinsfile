@@ -52,4 +52,13 @@ node('docker_pt') {
       }
     }
   }
-
+node ('production') {
+  stage ('Deploy to Prod'){
+    unstash 'binary'
+    sh 'cp target/hello-0.0.1.war /opt/tomcat/webapps/';
+ }
+    stage ('Start Tomcat'){
+    sh '''cd /opt/tomcat/bin
+    ./startup.sh''';
+    }
+}
