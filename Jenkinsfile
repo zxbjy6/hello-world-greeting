@@ -53,4 +53,3 @@ node('docker_pt') {
     }
   }
 
-}
