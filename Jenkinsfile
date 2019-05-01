@@ -8,7 +8,7 @@ node('docker') {
     archive 'target/*.jar'
   }
   stage('Static Code Analysis'){
-    sh 'mvn clean verify sonar:sonar -Dsonar.host.url=http://192.168.20.63:9000 -Dsonar.login=ac823d52fd8f04cc8900af51170c72ec4bf19fee';
+    sh 'mvn clean verify sonar:sonar -Dsonar.host.url=http://192.168.56.37:9000 -Dsonar.login=a5107121e7bd05d2633058258d353fda8ed776c6';
   }
   stage ('Integration Test'){
     sh 'mvn clean verify -Dsurefire.skip=true';
@@ -16,7 +16,7 @@ node('docker') {
     archive 'target/*.jar'
   }
   stage ('Publish'){
-    def server = Artifactory.server 'Default Artifactory Server'
+    def server = Artifactory.server 'Default Artifacory Server'
     def uploadSpec = """{
       "files": [
         {
@@ -28,37 +28,4 @@ node('docker') {
     }"""
     server.upload(uploadSpec)
   }
-  stash includes: 'target/hello-0.0.1.war,src/pt/Hello_World_Test_Plan.jmx',
-  name: 'binary'
-}
-node('docker_pt') {
-  stage ('Start Tomcat'){
-    sh '''cd /home/jenkins/tomcat/bin
-    ./startup.sh''';
-  }
-  stage ('Deploy '){
-    unstash 'binary'
-    sh 'cp target/hello-0.0.1.war /home/jenkins/tomcat/webapps/';
-  }
-  stage ('Performance Testing'){
-    sh '''cd /opt/jmeter/bin/
-    ./jmeter.sh -n -t $WORKSPACE/src/pt/Hello_World_Test_Plan.jmx -l $WORKSPACE/test_report.jtl''';
-    step([$class: 'ArtifactArchiver', artifacts: '**/*.jtl'])
-  }
-  stage ('Promote build in Artifactory'){
-    withCredentials([usernameColonPassword(credentialsId:
-      'artifactory-account', variable: 'credentials')]) {
-        sh 'curl -u${credentials} -X PUT "http://192.168.20.63:8081/artifactory/api/storage/example-project/${BUILD_NUMBER}/hello-0.0.1.war?properties=Performance-Tested=Yes"';
-      }
-    }
-  }
-node ('production') {
-  stage ('Deploy to Prod'){
-    unstash 'binary'
-    sh 'cp target/hello-0.0.1.war /opt/tomcat/webapps/';
- }
-    stage ('Start Tomcat'){
-    sh '''cd /opt/tomcat/bin
-    ./startup.sh''';
-    }
 }
